@@ -20,14 +20,20 @@ class BaseChat:
         self.user_input = user_input
 
 
-@app.post("/request", summary="请求DB-GPT对话", response_model=None)
-async def __request_chat_boot(bean: BaseChat):
+def convert_to_doct(obj):
+    if isinstance(obj, BaseChat):
+        return obj.__dict__
+    raise TypeError("Object is not serializable")
+
+
+@app.get("/request", summary="请求DB-GPT对话", response_model=None)
+async def __request_chat_boot(user_input: str):
     responseStr = ""
-    if bean.user_input is None:
+    if user_input is None:
         return responseStr
 
-    bean.__init__('c5c85b50-cfce-11ee-a9c4-0242c0a10002', 'chat_knowledge', 'wenxin_proxyllm', 'test',
-                  bean.user_input)
+    baseChat = BaseChat('c5c85b50-cfce-11ee-a9c4-0242c0a10002', 'chat_knowledge', 'wenxin_proxyllm', 'test',
+                        user_input)
 
     start = time.time()
     order = random.randint(1, 100)
@@ -36,7 +42,7 @@ async def __request_chat_boot(bean: BaseChat):
 
     # Send request.
     try:
-        responseStream = requests.post(url, data=json.dumps(bean), stream=True)
+        responseStream = requests.post(url, data=json.dumps(baseChat, default=convert_to_doct), stream=True)
     except Exception as e:
         logging.error(f'[{order}]执行对话请求失败，错误信息=> {e}')
         raise RuntimeError('System Error')
@@ -48,7 +54,7 @@ async def __request_chat_boot(bean: BaseChat):
     # Read EventStream
     for line in responseStream.iter_lines(decode_unicode=True):
         if line:
-            responseStr += line
+            responseStr += line.encode('ISO-8859-1').decode('utf-8')
             print(line)
 
     return responseStr
