@@ -4,12 +4,13 @@
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 from fastapi import FastAPI
-from controller import request_ai_control as rl
+from app.api import request_ai_control as rl
 
 app = FastAPI()
+# Register route to 'app'
 app.include_router(rl.app, prefix="/chat")
 
 if __name__ == '__main__':
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app)
